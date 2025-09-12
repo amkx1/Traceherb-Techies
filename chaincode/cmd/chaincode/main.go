@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
-	"permissionedchain/contracts/supplychain"
+
+	"supplychain/contracts/supchain" // ✅ folder name is supchain
 
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
 func main() {
-	cc := new(supplychain.SupplyChainContract)
+	cc := new(supchain.SupplyChainContract) // ✅ match package name inside contract.go
 	chaincode, err := contractapi.NewChaincode(cc)
 	if err != nil {
 		fmt.Printf("Error creating chaincode: %v", err)

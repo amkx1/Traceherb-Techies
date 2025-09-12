@@ -1,14 +1,14 @@
-package supplychain
+package supchain
 
 import (
 	"encoding/json"
 	"fmt"
 
-	"permissionedchain/internal/acl"
-	"permissionedchain/internal/events"
-	"permissionedchain/internal/geo"
-	"permissionedchain/internal/utils"
-	"permissionedchain/models"
+	"supplychain/internal/acl"
+	"supplychain/internal/events"
+	"supplychain/internal/geo"
+	"supplychain/internal/utils"
+	"supplychain/models"
 
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
@@ -41,10 +41,13 @@ func (c *SupplyChainContract) RegisterCollector(ctx contractapi.TransactionConte
 		return err
 	}
 
-	ctx.GetStub().SetEvent(events.EventName("CollectorRegistered"), events.Payload(map[string]string{"collectorId": collector.ID}))
+	ctx.GetStub().SetEvent(events.EventName("CollectorRegistered"), events.Payload(map[string]string{
+		"collectorId": collector.ID,
+	}))
 	return nil
 }
 
+// RecordCollectionEvent logs a collection event (geo-tagging, harvest)
 func (c *SupplyChainContract) RecordCollectionEvent(ctx contractapi.TransactionContextInterface, ev models.CollectionEvent) error {
 	// ensure the caller is a registered collector (or gateway on behalf)
 	collKey := utils.KeyFor("COLLECTOR", ev.CollectorID)
@@ -53,18 +56,18 @@ func (c *SupplyChainContract) RecordCollectionEvent(ctx contractapi.TransactionC
 		return fmt.Errorf("collector not registered: %s", ev.CollectorID)
 	}
 
-	// Geo-fencing: verify lat/long within permitted zones for this collector
+	// Geo-fencing: verify lat/long within permitted zones for this species
 	allowed := geo.IsPointAllowed(ev.Latitude, ev.Longitude, ev.Species)
 	if !allowed {
 		return fmt.Errorf("geo-fence violation: location not permitted for species %s", ev.Species)
 	}
 
-	// Seasonal & species conservation rules: simple stub (expand with off-chain policy)
+	// Seasonal & species conservation rules
 	if !utils.IsHarvestAllowedForSpecies(ev.Species, ev.Timestamp) {
 		return fmt.Errorf("harvest not allowed for species %s at %s", ev.Species, ev.Timestamp)
 	}
 
-	// Validate quality gate (basic thresholds) before accepting
+	// Validate quality gate (basic thresholds)
 	if !models.ValidateInitialQuality(ev) {
 		return fmt.Errorf("initial quality metrics failed thresholds")
 	}
@@ -81,10 +84,14 @@ func (c *SupplyChainContract) RecordCollectionEvent(ctx contractapi.TransactionC
 	ck, _ := ctx.GetStub().CreateCompositeKey("CollectionByCollector", []string{ev.CollectorID, ev.EventID})
 	ctx.GetStub().PutState(ck, []byte{0x00})
 
-	ctx.GetStub().SetEvent(events.EventName("CollectionRecorded"), events.Payload(map[string]string{"eventId": ev.EventID, "collectorId": ev.CollectorID}))
+	ctx.GetStub().SetEvent(events.EventName("CollectionRecorded"), events.Payload(map[string]string{
+		"eventId":     ev.EventID,
+		"collectorId": ev.CollectorID,
+	}))
 	return nil
 }
 
+// RecordQualityTest logs lab test results
 func (c *SupplyChainContract) RecordQualityTest(ctx contractapi.TransactionContextInterface, qt models.QualityTest) error {
 	// only lab-role allowed
 	if ok, _ := acl.HasRole(ctx, "lab"); !ok {
@@ -97,11 +104,14 @@ func (c *SupplyChainContract) RecordQualityTest(ctx contractapi.TransactionConte
 	if err := ctx.GetStub().PutState(key, b); err != nil {
 		return err
 	}
-	ctx.GetStub().SetEvent(events.EventName("QualityTestRecorded"), events.Payload(map[string]string{"testId": qt.TestID, "batchId": qt.BatchID}))
+	ctx.GetStub().SetEvent(events.EventName("QualityTestRecorded"), events.Payload(map[string]string{
+		"testId":  qt.TestID,
+		"batchId": qt.BatchID,
+	}))
 	return nil
 }
 
-// RecordProcessingStep records processing step events (drying, grinding, storage)
+// RecordProcessingStep logs processing steps (drying, grinding, storage)
 func (c *SupplyChainContract) RecordProcessingStep(ctx contractapi.TransactionContextInterface, ps models.ProcessingStep) error {
 	// processors only
 	if ok, _ := acl.HasRole(ctx, "processor"); !ok {
@@ -114,14 +124,18 @@ func (c *SupplyChainContract) RecordProcessingStep(ctx contractapi.TransactionCo
 	if err := ctx.GetStub().PutState(key, b); err != nil {
 		return err
 	}
-	ctx.GetStub().SetEvent(events.EventName("ProcessingStepRecorded"), events.Payload(map[string]string{"stepId": ps.StepID, "batchId": ps.BatchID}))
+	ctx.GetStub().SetEvent(events.EventName("ProcessingStepRecorded"), events.Payload(map[string]string{
+		"stepId":  ps.StepID,
+		"batchId": ps.BatchID,
+	}))
 	return nil
 }
 
+// GenerateProductQR stores mapping of batch → QR token
 func (c *SupplyChainContract) GenerateProductQR(ctx contractapi.TransactionContextInterface, batchId string) (string, error) {
-	// This returns a QR token (not the image). Off-chain service uses this token to generate QR and bundle.
+	// This returns a QR token (not the image). Off-chain service uses this token to generate QR.
 	token := utils.UUID("QR")
-	// map token -> batchId on ledger for audit
+	// map token -> batchId on ledger
 	key := utils.KeyFor("QRMAP", token)
 	if err := ctx.GetStub().PutState(key, []byte(batchId)); err != nil {
 		return "", err
@@ -129,12 +143,13 @@ func (c *SupplyChainContract) GenerateProductQR(ctx contractapi.TransactionConte
 	return token, nil
 }
 
-// QueryProvenance fetches collection, quality and processing events for a batch (FHIR-style bundle sketch)
+// QueryProvenance bundles collection, quality and processing data for a batch
 func (c *SupplyChainContract) QueryProvenance(ctx contractapi.TransactionContextInterface, batchId string) (string, error) {
-	// For brevity, this returns a JSON string composed from state queries. In production, stream and paginate.
-	// Query pattern: get collection events by batchId composite keys, quality tests, processing steps.
-	// NOTE: Implementation left as a composition exercise; return stub for now.
-	bundle := map[string]string{"batchId": batchId, "status": "bundle-generation-pending"}
+	// Stub for now: in production, aggregate state queries
+	bundle := map[string]string{
+		"batchId": batchId,
+		"status":  "bundle-generation-pending",
+	}
 	jb, _ := json.Marshal(bundle)
 	return string(jb), nil
 }
