@@ -1,0 +1,63 @@
+############################################################
+# Sample configtx.yaml for SupplyChain Network
+############################################################
+
+Organizations:
+  # Farmers Organization
+  - &FarmersOrg
+    Name: FarmersMSP
+    ID: FarmersMSP
+    MSPDir: crypto-config/peerOrganizations/farmers.example.com/msp
+    AnchorPeers:
+      - Host: peer0.farmers.example.com
+        Port: 7051
+
+  # Labs Organization
+  - &LabsOrg
+    Name: LabsMSP
+    ID: LabsMSP
+    MSPDir: crypto-config/peerOrganizations/labs.example.com/msp
+    AnchorPeers:
+      - Host: peer0.labs.example.com
+        Port: 9051
+
+############################################################
+# Orderer Configuration
+############################################################
+Orderer: &OrdererDefaults
+  OrdererType: solo
+  Addresses:
+    - orderer.example.com:7050
+  BatchTimeout: 2s
+  BatchSize:
+    MaxMessageCount: 10
+    AbsoluteMaxBytes: 99 MB
+    PreferredMaxBytes: 512 KB
+  Organizations:
+
+############################################################
+# Channel Configuration Defaults
+############################################################
+Channel: &ChannelDefaults
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+
+############################################################
+# Network Profiles
+############################################################
+Profiles:
+  SupplyChainChannel:
+    Consortium: SupplyChainConsortium
+    Application:
+      <<: *ChannelDefaults
+      Organizations:
+        - *FarmersOrg
+        - *LabsOrg

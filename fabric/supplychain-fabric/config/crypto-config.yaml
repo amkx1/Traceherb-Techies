@@ -1,0 +1,24 @@
+############################################################
+# crypto-config.yaml for SupplyChain Network
+############################################################
+
+OrdererOrgs:
+  - Name: Orderer
+    Domain: example.com
+    Specs:
+      - Hostname: orderer
+
+PeerOrgs:
+  - Name: Farmers
+    Domain: farmers.example.com
+    Template:
+      Count: 1 # number of peers in this org
+    Users:
+      Count: 1 # number of admin users
+
+  - Name: Labs
+    Domain: labs.example.com
+    Template:
+      Count: 1
+    Users:
+      Count: 1
