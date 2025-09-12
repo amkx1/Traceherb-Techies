@@ -1,0 +1,8 @@
+{
+  "credentials": {
+    "certificate": "-----BEGIN CERTIFICATE-----\nMIIC...admin.cert.data...END CERTIFICATE-----\n",
+    "privateKey": "-----BEGIN PRIVATE KEY-----\nMIIE...admin.key.data...END PRIVATE KEY-----\n"
+  },
+  "mspId": "Org1MSP",
+  "type": "X.509"
+}
