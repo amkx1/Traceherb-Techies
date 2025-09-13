@@ -11,54 +11,44 @@ let gateway;
 let contract;
 
 async function initFabric() {
-    try {
-        const ccpJSON = fs.readFileSync(ccpPath, 'utf8');
-        const ccp = JSON.parse(ccpJSON);
+  const ccpJSON = fs.readFileSync(ccpPath, 'utf8');
+  const ccp = JSON.parse(ccpJSON);
+  const wallet = await Wallets.newFileSystemWallet(walletPath);
 
-        const wallet = await Wallets.newFileSystemWallet(walletPath);
+  gateway = new Gateway();
+  await gateway.connect(ccp, {
+    wallet,
+    identity: 'appUser',
+    discovery: { enabled: true, asLocalhost: false }
+  });
 
-        gateway = new Gateway();
-        await gateway.connect(ccp, {
-            wallet,
-            identity: 'appUser', // make sure this identity exists in wallet
-            discovery: { enabled: true, asLocalhost: false }
-        });
-
-        const network = await gateway.getNetwork('mychannel'); // update if your channel name differs
-        contract = network.getContract('supplychain'); // update if your chaincode name differs
-
-        console.log('Fabric client initialized');
-    } catch (error) {
-        console.error(`Failed to initialize Fabric client: ${error}`);
-        throw error;
-    }
+  const network = await gateway.getNetwork('mychannel');
+  contract = network.getContract('supplychain');
 }
 
 function getContract() {
-    if (!contract) throw new Error('Fabric not initialized yet');
-    return contract;
+  if (!contract) throw new Error('Fabric not initialized yet');
+  return contract;
 }
 
 async function submitTransaction(functionName, ...args) {
-    const result = await contract.submitTransaction(functionName, ...args);
-    return result.toString();
+  const result = await contract.submitTransaction(functionName, ...args);
+  return result.toString();
 }
 
 async function evaluateTransaction(functionName, ...args) {
-    const result = await contract.evaluateTransaction(functionName, ...args);
-    return result.toString();
+  const result = await contract.evaluateTransaction(functionName, ...args);
+  return result.toString();
 }
 
 async function disconnect() {
-    if (gateway) {
-        await gateway.disconnect();
-    }
+  if (gateway) await gateway.disconnect();
 }
 
 module.exports = {
-    initFabric,
-    getContract,
-    submitTransaction,
-    evaluateTransaction,
-    disconnect
+  initFabric,
+  getContract,
+  submitTransaction,
+  evaluateTransaction,
+  disconnect
 };

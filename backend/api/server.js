@@ -1,42 +1,48 @@
 'use strict';
 
-'use strict';
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const fabricClient = require('./FabricClient');
 
-// Import handlers from the handlers folder
 const collectorHandler = require('./handlers/collectorHandler');
-const collectionHandler = require('./handlers/CollectionHandler');
-const provenanceHandler = require('./handlers/ProvenanceHandler');
+const collectionHandler = require('./handlers/collectionHandler');
+const provenanceHandler = require('./handlers/provenanceHandler');
 const qrHandler = require('./handlers/qrHandler');
+const recallHandler = require('./handlers/recallHandler');
+const smsCollectionHandler = require('./handlers/smsCollectionHandler');
 
+const { authenticate, authorize } = require('./auth');
 
 async function main() {
-    const app = express();
-    app.use(bodyParser.json());
+  const app = express();
 
-    // Init Fabric client before accepting requests
-    await fabricClient.initFabric();
+  app.use(bodyParser.json());
 
-    // Routes
-    app.post('/api/collectors', collectorHandler.registerCollector);
-    app.post('/api/collections', collectionHandler.createCollection);
-    app.get('/api/collections/:collectionId', collectionHandler.getCollection);
-    app.get('/api/provenance/:batchId', provenanceHandler.getProvenance);
-    app.get('/api/qrcode/:batchId', qrHandler.generateQRCode);
+  // Initialize Fabric client
+  await fabricClient.initFabric();
 
-    // Error handler
-    app.use((err, req, res, next) => {
-        console.error('API Error:', err);
-        res.status(500).json({ error: err.message });
-    });
+  // Authentication Middleware (apply as needed)
+  app.use(authenticate);
 
-    const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () => {
-        console.log(`API Server running on port ${PORT}`);
-    });
+  // Routes
+  app.post('/api/collectors', authorize('admin'), collectorHandler.registerCollector);
+  app.post('/api/collections', authorize('collector'), collectionHandler.createCollection);
+  app.post('/api/sms/collections', smsCollectionHandler.smsCollection); // open or with phone/token validation
+  app.get('/api/collections/:collectionId', authorize('collector'), collectionHandler.getCollection);
+  app.get('/api/provenance/:batchId', provenanceHandler.getProvenance);
+  app.get('/api/qrcode/:batchId', qrHandler.generateQRCode);
+  app.post('/api/recall/:batchId', authorize('admin'), recallHandler.recallBatch);
+
+  // Error handler
+  app.use((err, req, res, next) => {
+    console.error('API Error:', err);
+    res.status(500).json({ error: err.message });
+  });
+
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`API Server running on port ${PORT}`);
+  });
 }
 
 main().catch(console.error);
