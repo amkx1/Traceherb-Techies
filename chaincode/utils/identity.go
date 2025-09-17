@@ -1,4 +1,4 @@
-package contracts
+package utils
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
-// GetClientID - full x509-style ID string
+// GetClientID - returns the full x509-style ID string of the invoking client
 func GetClientID(ctx contractapi.TransactionContextInterface) (string, error) {
 	id, err := ctx.GetClientIdentity().GetID()
 	if err != nil {
@@ -15,7 +15,7 @@ func GetClientID(ctx contractapi.TransactionContextInterface) (string, error) {
 	return id, nil
 }
 
-// GetClientMSP - MSP ID of caller
+// GetClientMSP - returns the MSP ID of the invoking client
 func GetClientMSP(ctx contractapi.TransactionContextInterface) (string, error) {
 	msp, err := ctx.GetClientIdentity().GetMSPID()
 	if err != nil {
