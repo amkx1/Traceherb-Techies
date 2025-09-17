@@ -1,4 +1,4 @@
-package main
+package models
 
 // CollectionEvent - created by Farmer or Wild Collector
 type CollectionEvent struct {

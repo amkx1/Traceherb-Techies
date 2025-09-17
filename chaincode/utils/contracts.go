@@ -16,7 +16,7 @@ func EmitEvent(ctx contractapi.TransactionContextInterface, eventName string, pa
 }
 
 // AddToBatchIndex stores an ordered list of keys for a given batchID
-func addToBatchIndex(ctx contractapi.TransactionContextInterface, batchID string, key string) error {
+func AddToBatchIndex(ctx contractapi.TransactionContextInterface, batchID string, key string) error {
 	indexKey := "index:batch:" + batchID
 
 	idxBytes, err := ctx.GetStub().GetState(indexKey)

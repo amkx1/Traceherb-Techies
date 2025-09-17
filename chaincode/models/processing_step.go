@@ -1,4 +1,4 @@
-package main
+package models
 
 // ProcessingStep - created by Processor
 type ProcessingStep struct {

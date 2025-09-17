@@ -1,4 +1,4 @@
-package main
+package models
 
 // FinalBatch - created by Manufacturer, contains QR payload stored on-chain
 type FinalBatch struct {
