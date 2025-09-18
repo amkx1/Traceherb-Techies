@@ -1,0 +1,25 @@
+const twilio = require('twilio');
+const config = require('../config/twilioConfig.json');
+
+// Twilio client
+const client = twilio(config.accountSid, config.authToken);
+
+/**
+ * Send an SMS message to a farmer
+ * @param {string} to - Recipient phone number (e.g. +919876543210)
+ * @param {string} message - Message text
+ */
+async function sendSMS(to, message) {
+  try {
+    await client.messages.create({
+      body: message,
+      from: config.fromNumber,
+      to
+    });
+    console.log(`SMS sent to ${to}: ${message}`);
+  } catch (err) {
+    console.error('SMS error:', err.message);
+  }
+}
+
+module.exports = { sendSMS };
