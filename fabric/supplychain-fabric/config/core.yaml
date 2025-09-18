@@ -1,22 +1,26 @@
 ################################################################################
-# Hyperledger Fabric Peer Configuration File
+# Hyperledger Fabric Peer Configuration (core.yaml template)
 ################################################################################
 
-# Peer identification
 peer:
-  id: peer0.org1.example.com
+  # Peer identity (overridden by env CORE_PEER_ID, CORE_PEER_ADDRESS, etc.)
+  id: peer0.org.example.com
   networkId: dev
-  address: localhost:7051
-  localMspId: Org1MSP
+  address: 0.0.0.0:7051
+  localMspId: OrgMSP
+
+  # Gossip settings (auto-overridden by env vars in docker-compose)
   gossip:
-    bootstrap: localhost:7051
+    bootstrap: 127.0.0.1:7051
     useLeaderElection: true
     orgLeader: false
-    endpoint: localhost:7051
+    endpoint: 127.0.0.1:7051
+
   listenAddress: 0.0.0.0:7051
   chaincodeListenAddress: 0.0.0.0:7052
+  chaincodeAddress: 127.0.0.1:7052
 
-# TLS configuration
+# TLS configuration (mounted into container)
 tls:
   enabled: true
   cert:
@@ -26,27 +30,39 @@ tls:
   rootcert:
     file: /etc/hyperledger/fabric/tls/ca.crt
 
-# Local MSP path
-mspConfigPath: ../crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp
+# Local MSP path (mounted in docker-compose)
+mspConfigPath: /etc/hyperledger/fabric/msp
 
 # Ledger configuration
 ledger:
   state:
-    database: leveldb
+    database: goleveldb # change to couchdb if you enable it
   history:
-    enableHistoryDatabase: false
+    enableHistoryDatabase: true
 
-# CouchDB (optional)
+# CouchDB (optional, used if CORE_LEDGER_STATE_DATABASE=couchdb)
 couchdb:
-  address: localhost:5984
+  address: couchdb:5984
   username: ""
   password: ""
 
 # Chaincode external builder / launcher settings
 chaincode:
   externalBuilders: []
+  installTimeout: 300s
+  startuptimeout: 300s
 
 # Logging
 logging:
   peer:
     level: info
+  gossip:
+    level: info
+  ledger:
+    level: info
+  msp:
+    level: info
+  policies:
+    level: info
+  grpc:
+    level: error

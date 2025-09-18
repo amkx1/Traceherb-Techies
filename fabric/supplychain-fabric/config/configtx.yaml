@@ -1,19 +1,42 @@
-############################################################
-# Sample configtx.yaml for SupplyChain Network
-############################################################
+---
+# configtx.yaml for Supply Chain Network
 
+################################################################################
+# Organizations
+################################################################################
 Organizations:
-  # Farmers Organization
-  - &FarmersOrg
+  - &OrdererOrg
+    Name: OrdererOrg
+    ID: OrdererMSP
+    MSPDir: crypto-config/ordererOrganizations/example.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('OrdererMSP.admin')"
+
+  - &Collectors
+    Name: CollectorsMSP
+    ID: CollectorsMSP
+    MSPDir: crypto-config/peerOrganizations/collectors.example.com/msp
+    AnchorPeers:
+      - Host: peer0.collectors.example.com
+        Port: 7051
+
+  - &Farmers
     Name: FarmersMSP
     ID: FarmersMSP
     MSPDir: crypto-config/peerOrganizations/farmers.example.com/msp
     AnchorPeers:
       - Host: peer0.farmers.example.com
-        Port: 7051
+        Port: 8051
 
-  # Labs Organization
-  - &LabsOrg
+  - &Labs
     Name: LabsMSP
     ID: LabsMSP
     MSPDir: crypto-config/peerOrganizations/labs.example.com/msp
@@ -21,23 +44,96 @@ Organizations:
       - Host: peer0.labs.example.com
         Port: 9051
 
-############################################################
-# Orderer Configuration
-############################################################
+  - &Processors
+    Name: ProcessorsMSP
+    ID: ProcessorsMSP
+    MSPDir: crypto-config/peerOrganizations/processors.example.com/msp
+    AnchorPeers:
+      - Host: peer0.processors.example.com
+        Port: 10051
+
+  - &Manufacturers
+    Name: ManufacturersMSP
+    ID: ManufacturersMSP
+    MSPDir: crypto-config/peerOrganizations/manufacturers.example.com/msp
+    AnchorPeers:
+      - Host: peer0.manufacturers.example.com
+        Port: 11051
+
+  - &Provenance
+    Name: ProvenanceMSP
+    ID: ProvenanceMSP
+    MSPDir: crypto-config/peerOrganizations/provenance.example.com/msp
+    AnchorPeers:
+      - Host: peer0.provenance.example.com
+        Port: 12051
+
+################################################################################
+# Capabilities
+################################################################################
+Capabilities:
+  Channel: &ChannelCapabilities
+    V2_0: true
+  Orderer: &OrdererCapabilities
+    V2_0: true
+  Application: &ApplicationCapabilities
+    V2_0: true
+
+################################################################################
+# Application section
+################################################################################
+Application: &ApplicationDefaults
+  Organizations:
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+  Capabilities:
+    <<: *ApplicationCapabilities
+
+################################################################################
+# Orderer section
+################################################################################
 Orderer: &OrdererDefaults
-  OrdererType: solo
+  OrdererType: etcdraft
   Addresses:
     - orderer.example.com:7050
+  EtcdRaft:
+    Consenters:
+      - Host: orderer.example.com
+        Port: 7050
+        ClientTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
+        ServerTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
   BatchTimeout: 2s
   BatchSize:
     MaxMessageCount: 10
     AbsoluteMaxBytes: 99 MB
     PreferredMaxBytes: 512 KB
-  Organizations:
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+    BlockValidation:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+  Capabilities:
+    <<: *OrdererCapabilities
 
-############################################################
-# Channel Configuration Defaults
-############################################################
+################################################################################
+# Channel section
+################################################################################
 Channel: &ChannelDefaults
   Policies:
     Readers:
@@ -49,15 +145,37 @@ Channel: &ChannelDefaults
     Admins:
       Type: ImplicitMeta
       Rule: "MAJORITY Admins"
+  Capabilities:
+    <<: *ChannelCapabilities
 
-############################################################
-# Network Profiles
-############################################################
+################################################################################
+# Profiles
+################################################################################
 Profiles:
+  SupplyChainGenesis:
+    <<: *ChannelDefaults
+    Orderer:
+      <<: *OrdererDefaults
+      Organizations:
+        - *OrdererOrg
+    Consortiums:
+      SupplyChainConsortium:
+        Organizations:
+          - *Collectors
+          - *Farmers
+          - *Labs
+          - *Processors
+          - *Manufacturers
+          - *Provenance
+
   SupplyChainChannel:
     Consortium: SupplyChainConsortium
     Application:
-      <<: *ChannelDefaults
+      <<: *ApplicationDefaults
       Organizations:
-        - *FarmersOrg
-        - *LabsOrg
+        - *Collectors
+        - *Farmers
+        - *Labs
+        - *Processors
+        - *Manufacturers
+        - *Provenance

@@ -9,15 +9,43 @@ OrdererOrgs:
       - Hostname: orderer
 
 PeerOrgs:
-  - Name: Farmers
-    Domain: farmers.example.com
+  - Name: Collectors
+    Domain: collectors.example.com
     Template:
       Count: 1 # number of peers in this org
     Users:
-      Count: 1 # number of admin users
+      Count: 1 # number of client/admin users
+
+  - Name: Farmers
+    Domain: farmers.example.com
+    Template:
+      Count: 1
+    Users:
+      Count: 1
 
   - Name: Labs
     Domain: labs.example.com
+    Template:
+      Count: 1
+    Users:
+      Count: 1
+
+  - Name: Processors
+    Domain: processors.example.com
+    Template:
+      Count: 1
+    Users:
+      Count: 1
+
+  - Name: Manufacturers
+    Domain: manufacturers.example.com
+    Template:
+      Count: 1
+    Users:
+      Count: 1
+
+  - Name: Provenance
+    Domain: provenance.example.com
     Template:
       Count: 1
     Users:
