@@ -23,7 +23,7 @@ app.use('/ivr', ivrRoutes); // 🆕 mount IVR route
 
 // Root endpoint
 app.get('/', (req, res) => {
-  res.json({ message: 'TraceHer Backend is running 🚀' });
+  res.json({ message: 'TraceHer Backend is running ' });
 });
 
 // Start server
