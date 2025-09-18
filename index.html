@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MyDrugs Market</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Courier New', monospace;
+    }
+    .neon-text {
+      color: #0ff;
+      text-shadow: 0 0 5px #0ff, 0 0 10px #0ff, 0 0 20px #0ff;
+    }
+    .glow-border {
+      border: 1px solid #0ff;
+      box-shadow: 0 0 10px #0ff, inset 0 0 5px #0ff;
+    }
+    .glass {
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(6px);
+    }
+    .card-hover:hover {
+      transform: scale(1.03);
+      transition: all 0.3s ease-in-out;
+      box-shadow: 0 0 15px #00ffff88;
+    }
+    a:focus, button:focus, input:focus {
+      outline: 2px solid #00ffff;
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+<body class="bg-black text-white">
+
+  <!-- 🌟 Navbar -->
+  <nav class="flex justify-between items-center p-6 border-b border-cyan-500 glass">
+    <h1 class="text-2xl neon-text font-bold">MyDrugs</h1>
+    <ul class="flex gap-6 text-cyan-300">
+      <li><a href="#products" class="hover:underline">Products</a></li>
+      <li><a href="#featured" class="hover:underline">Featured</a></li>
+      <li><a href="#faq" class="hover:underline">FAQ</a></li>
+      <li><a href="#contact" class="hover:underline">Contact</a></li>
+    </ul>
+  </nav>
+
+  <!-- 🚀 Hero Section -->
+  <section class="text-center py-20 px-6">
+    <h2 class="text-5xl neon-text font-bold mb-4">Welcome to MyDrugs</h2>
+    <p class="text-cyan-400 text-lg max-w-2xl mx-auto">The #1 fictional darknet marketplace for premium synthetic substances. Totally illegal in real life, totally cool on screen.</p>
+  </section>
+
+  <!-- 🔍 Search -->
+  <div class="p-6 max-w-xl mx-auto">
+    <label for="search" class="sr-only">Search</label>
+    <input id="search" type="text" placeholder="Search for products..."
+           class="w-full p-4 bg-gray-900 text-cyan-300 placeholder-cyan-500 rounded glow-border" />
+  </div>
+
+  <!-- 🧪 Products Section -->
+  <section id="products" class="p-6">
+    <h3 class="text-3xl neon-text mb-6">Products</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      <!-- Example Product -->
+      <div class="glass rounded-lg p-4 glow-border card-hover">
+        <img src="https://via.placeholder.com/300x160/000/00ffff?text=Ecstasy" alt="Ecstasy Pills" class="rounded mb-4" />
+        <h4 class="text-xl neon-text font-bold">Ecstasy</h4>
+        <p class="text-cyan-400 text-sm">100mg · $15 · In stock</p>
+      </div>
+      <!-- Add more cards similarly -->
+      <div class="glass rounded-lg p-4 glow-border card-hover">
+        <img src="https://via.placeholder.com/300x160/000/00ffff?text=Weed" alt="Weed" class="rounded mb-4" />
+        <h4 class="text-xl neon-text font-bold">Weed</h4>
+        <p class="text-cyan-400 text-sm">1g · $10 · Organic</p>
+      </div>
+      <div class="glass rounded-lg p-4 glow-border card-hover">
+        <img src="https://via.placeholder.com/300x160/000/00ffff?text=LSD" alt="LSD" class="rounded mb-4" />
+        <h4 class="text-xl neon-text font-bold">LSD</h4>
+        <p class="text-cyan-400 text-sm">1 tab · $20 · Potent</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 💎 Featured Products -->
+  <section id="featured" class="p-6 mt-10 bg-gray-900">
+    <h3 class="text-3xl neon-text mb-6">Featured</h3>
+    <div class="flex flex-col md:flex-row gap-6">
+      <div class="glass flex-1 p-6 rounded-lg glow-border">
+        <h4 class="text-2xl text-cyan-300 font-bold mb-2">🔥 Top Seller: MDMA</h4>
+        <p class="text-cyan-500 text-sm">Best-rated by our elite customers. 250mg tablets. High purity.</p>
+      </div>
+      <div class="glass flex-1 p-6 rounded-lg glow-border">
+        <h4 class="text-2xl text-cyan-300 font-bold mb-2">🧠 Staff Pick: Microdose LSD</h4>
+        <p class="text-cyan-500 text-sm">Boost your brain. Carefully packed. Safe delivery guaranteed.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ❓ FAQ -->
+  <section id="faq" class="p-6">
+    <h3 class="text-3xl neon-text mb-6">FAQ</h3>
+    <div class="space-y-4">
+      <details class="bg-gray-800 p-4 rounded glow-border">
+        <summary class="font-bold text-cyan-300 cursor-pointer">How does shipping work?</summary>
+        <p class="text-cyan-500 mt-2">We use decentralized couriers. Delivery times range from 1–7 days.</p>
+      </details>
+      <details class="bg-gray-800 p-4 rounded glow-border">
+        <summary class="font-bold text-cyan-300 cursor-pointer">Is this legal?</summary>
+        <p class="text-cyan-500 mt-2">Absolutely not. But this is a replica for design inspiration only.</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- 📞 Contact -->
+  <section id="contact" class="p-6 bg-gray-950">
+    <h3 class="text-3xl neon-text mb-6">Contact</h3>
+    <form class="space-y-4 max-w-xl">
+      <input type="text" placeholder="Your name" class="w-full p-3 bg-gray-900 text-white rounded glow-border" />
+      <input type="email" placeholder="Your email" class="w-full p-3 bg-gray-900 text-white rounded glow-border" />
+      <textarea placeholder="Your message" class="w-full p-3 bg-gray-900 text-white rounded glow-border h-32"></textarea>
+      <button type="submit" class="px-6 py-2 bg-cyan-500 text-black font-bold rounded hover:bg-cyan-400 transition">Send</button>
+    </form>
+  </section>
+
+  <!-- 🦶 Footer -->
+  <footer class="text-center text-cyan-500 text-sm p-6 border-t border-cyan-500 mt-10">
+    &copy; 2025 MyDrugs Market. Fictional site for educational/demo purposes only.
+  </footer>
+</body>
+</html>
