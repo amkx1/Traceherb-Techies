@@ -1,15 +1,13 @@
 package utils
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
 )
 
-// ValidateGeoFence - sample implementation: checks if lat,lon within allowed bounding boxes.
-// In production, replace bounding boxes with an on-chain list or external trusted registry.
+// ValidateGeoFence - checks if lat,lon within allowed bounding boxes
 func ValidateGeoFence(location string) error {
 	// location expected "lat,lon" e.g. "23.456,77.123"
 	parts := strings.Split(location, ",")
@@ -25,20 +23,17 @@ func ValidateGeoFence(location string) error {
 		return fmt.Errorf("invalid longitude: %v", err)
 	}
 
-	// demo bounding box: replace with real zones
-	// Example allowed zone: lat [22.0 - 25.0], lon [76.0 - 79.0]
+	// demo bounding box
 	if lat < 22.0 || lat > 25.0 || lon < 76.0 || lon > 79.0 {
 		return fmt.Errorf("location %f,%f is outside allowed harvesting zones", lat, lon)
 	}
 	return nil
 }
 
-// ValidateSeason - sample: check month of harvest against allowed months per species
+// ValidateSeason - check month of harvest against allowed months per species
 func ValidateSeason(species string, timestamp string) error {
-	// timestamp ISO8601 expected
 	t, err := time.Parse(time.RFC3339, timestamp)
 	if err != nil {
-		// accept simple date fallback
 		t, err = time.Parse("2006-01-02", timestamp)
 		if err != nil {
 			return fmt.Errorf("timestamp parse error: %v", err)
@@ -46,8 +41,6 @@ func ValidateSeason(species string, timestamp string) error {
 	}
 
 	month := t.Month()
-
-	// demo rules: map species->allowed months
 	allowed := map[string][]time.Month{
 		"Ashwagandha": {time.September, time.October, time.November},
 		"GenericHerb": {time.January, time.February, time.March},
@@ -61,29 +54,27 @@ func ValidateSeason(species string, timestamp string) error {
 		}
 		return fmt.Errorf("species %s cannot be harvested in month %s", species, month.String())
 	}
-	// if species not found, allow by default but warn
+
 	return nil
 }
 
 // ValidateConservation - sample limit check
 func ValidateConservation(species string) error {
-	// demo: block species named "EndangeredHerb"
 	if species == "EndangeredHerb" {
 		return fmt.Errorf("harvesting of species %s is prohibited (conservation rule)", species)
 	}
 	return nil
 }
 
-// ValidateQuality - basic QC threshold check on lab results string
-// results expected to be a JSON string like {"moisture":8,"pesticide":"PASS","dna":"MATCH"}
-func ValidateQuality(results string) error {
-	var r map[string]interface{}
-	if err := json.Unmarshal([]byte(results), &r); err != nil {
-		return fmt.Errorf("invalid results JSON: %v", err)
+// ValidateQuality - basic QC threshold check on lab results JSON string
+// ValidateQuality - basic QC threshold check on lab results map
+func ValidateQuality(results map[string]interface{}) error {
+	if results == nil || len(results) == 0 {
+		return fmt.Errorf("results cannot be empty")
 	}
 
 	// check moisture threshold
-	if m, ok := r["moisture"]; ok {
+	if m, ok := results["moisture"]; ok {
 		switch v := m.(type) {
 		case float64:
 			if v > 12.0 {
@@ -96,14 +87,15 @@ func ValidateQuality(results string) error {
 			}
 		}
 	}
+
 	// check pesticide status
-	if p, ok := r["pesticide"]; ok {
+	if p, ok := results["pesticide"]; ok {
 		if s, ok := p.(string); ok {
 			if strings.ToUpper(s) != "PASS" {
 				return fmt.Errorf("pesticide test status is not PASS: %s", s)
 			}
 		}
 	}
-	// dna check optional
+
 	return nil
 }

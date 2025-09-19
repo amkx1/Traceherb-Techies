@@ -1,10 +1,11 @@
 package models
 
 type QualityTestEvent struct {
-	ID        string `json:"id"`
-	BatchID   string `json:"batch_id"`
-	Lab       string `json:"lab"`
-	Org       string `json:"org"`
-	Results   string `json:"results"`
-	Timestamp string `json:"timestamp"`
+	ResourceType string                 `json:"resourceType"`
+	ID           string                 `json:"id"`
+	LabID        string                 `json:"labId"`
+	BatchID      string                 `json:"batchId"`
+	Results      map[string]interface{} `json:"results"`
+	Timestamp    string                 `json:"timestamp"`
+	Certificate  string                 `json:"certificateUrl,omitempty"`
 }

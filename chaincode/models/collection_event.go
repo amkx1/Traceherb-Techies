@@ -1,12 +1,17 @@
 package models
 
-// CollectionEvent - created by Farmer or Wild Collector
+// CollectionEvent represents a raw herb collection
 type CollectionEvent struct {
-	ID        string `json:"id"` // unique event id (used as batch id for downstream)
-	Species   string `json:"species"`
-	Location  string `json:"location"`  // "lat,lon"
-	Collector string `json:"collector"` // clientID (x509 style)
-	Org       string `json:"org"`       // MSP id
-	Timestamp string `json:"timestamp"` // ISO8601
-	Quality   string `json:"quality"`   // small JSON or CSV: e.g., "moisture:10"
+	ResourceType string                 `json:"resourceType"`
+	ID           string                 `json:"id"`
+	CollectorID  string                 `json:"collectorId"`
+	ActorType    string                 `json:"actorType"` // farmer | wild_collector
+	Species      string                 `json:"species"`
+	CommonName   string                 `json:"commonName,omitempty"`
+	QuantityKg   float64                `json:"quantityKg,omitempty"`
+	Location     map[string]float64     `json:"location,omitempty"` // {"lat": , "lon": }
+	Timestamp    string                 `json:"timestamp"`
+	InitialQual  map[string]interface{} `json:"initialQuality,omitempty"`
+	Notes        string                 `json:"notes,omitempty"`
+	BatchID      string                 `json:"batchId,omitempty"` // optional link to a batch
 }
