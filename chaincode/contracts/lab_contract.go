@@ -16,74 +16,80 @@ type LabContract struct {
 
 // AddQualityTest - labs append test results for a batch
 func (lc *LabContract) AddQualityTest(ctx contractapi.TransactionContextInterface,
-	id, batchID, results, timestamp string) error {
+	id, batchID, resultsJson, timestamp, certificate string) (*models.QualityTestEvent, error) {
 
 	clientID, err := utils.GetClientID(ctx)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("failed to get client ID: %v", err)
 	}
 	msp, err := utils.GetClientMSP(ctx)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("failed to get MSP: %v", err)
 	}
 	if msp != "LabMSP" && msp != "TestingLabMSP" {
-		return fmt.Errorf("access denied: only LabMSP can add quality tests")
+		return nil, fmt.Errorf("access denied: only LabMSP/TestingLabMSP can add quality tests")
 	}
 
-	// verify batch exists
 	cKey := "CollectionEvent:" + batchID
 	cbz, err := ctx.GetStub().GetState(cKey)
-	if err != nil {
-		return fmt.Errorf("failed to read batch: %v", err)
-	}
-	if cbz == nil {
-		return fmt.Errorf("batch %s not found (collection event required)", batchID)
+	if err != nil || cbz == nil {
+		return nil, fmt.Errorf("batch %s not found (collection event required)", batchID)
 	}
 
-	// basic quality validation
+	// parse results JSON
+	var results map[string]interface{}
+	if err := json.Unmarshal([]byte(resultsJson), &results); err != nil {
+		return nil, fmt.Errorf("invalid results JSON: %v", err)
+	}
 	if err := utils.ValidateQuality(results); err != nil {
-		return fmt.Errorf("quality validation failed: %v", err)
+		return nil, fmt.Errorf("quality validation failed: %v", err)
 	}
 
+	// prevent duplicate test id
 	key := "QualityTestEvent:" + id
-	existing, err := ctx.GetStub().GetState(key)
-	if err != nil {
-		return err
-	}
+	existing, _ := ctx.GetStub().GetState(key)
 	if existing != nil {
-		return fmt.Errorf("quality test %s already exists", id)
+		return nil, fmt.Errorf("quality test %s already exists", id)
 	}
 
-	event := models.QualityTestEvent{
-		ID:        id,
-		BatchID:   batchID,
-		Lab:       clientID,
-		Org:       msp,
-		Results:   results,
-		Timestamp: timestamp,
+	// prevent same lab submitting multiple tests for same batch
+	existingBzs, _ := utils.GetFromBatchIndex(ctx, batchID)
+	for _, eb := range existingBzs {
+		var qt models.QualityTestEvent
+		_ = json.Unmarshal(eb, &qt)
+		if qt.LabID == clientID {
+			return nil, fmt.Errorf("lab %s has already submitted a test for batch %s", clientID, batchID)
+		}
 	}
 
-	bz, err := json.Marshal(event)
-	if err != nil {
-		return err
+	event := &models.QualityTestEvent{
+		ResourceType: "QualityTestEvent",
+		ID:           id,
+		LabID:        clientID,
+		BatchID:      batchID,
+		Results:      results,
+		Timestamp:    timestamp,
+		Certificate:  certificate,
 	}
+
+	bz, _ := json.Marshal(event)
 	if err := ctx.GetStub().PutState(key, bz); err != nil {
-		return err
+		return nil, fmt.Errorf("failed to store quality test: %v", err)
 	}
 
-	// index it to batch
+	// store in batch index (include prefix in key)
 	if err := utils.AddToBatchIndex(ctx, batchID, key); err != nil {
-		return err
+		return nil, fmt.Errorf("failed to add quality test to batch index: %v", err)
 	}
 
 	if err := utils.EmitEvent(ctx, "QualityTestAdded", bz); err != nil {
-		// continue even if event emits fails
+		fmt.Printf("warning: failed to emit event: %v\n", err)
 	}
 
-	return nil
+	return event, nil
 }
 
-// ReadQualityTest
+// ReadQualityTest returns a quality test by id
 func (lc *LabContract) ReadQualityTest(ctx contractapi.TransactionContextInterface, id string) (*models.QualityTestEvent, error) {
 	key := "QualityTestEvent:" + id
 	bz, err := ctx.GetStub().GetState(key)
@@ -93,9 +99,27 @@ func (lc *LabContract) ReadQualityTest(ctx contractapi.TransactionContextInterfa
 	if bz == nil {
 		return nil, fmt.Errorf("quality test %s does not exist", id)
 	}
-	var ev models.QualityTestEvent
-	if err := json.Unmarshal(bz, &ev); err != nil {
-		return nil, err
+
+	var qt models.QualityTestEvent
+	if err := json.Unmarshal(bz, &qt); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal quality test: %v", err)
 	}
-	return &ev, nil
+	return &qt, nil
+}
+
+// GetTestsByBatch returns all QualityTestEvent entries for a batch
+func (lc *LabContract) GetTestsByBatch(ctx contractapi.TransactionContextInterface, batchID string) ([]*models.QualityTestEvent, error) {
+	bzs, err := utils.GetFromBatchIndex(ctx, batchID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query quality tests for batch: %v", err)
+	}
+
+	tests := []*models.QualityTestEvent{}
+	for _, bz := range bzs {
+		var qt models.QualityTestEvent
+		if err := json.Unmarshal(bz, &qt); err == nil {
+			tests = append(tests, &qt)
+		}
+	}
+	return tests, nil
 }

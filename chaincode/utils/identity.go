@@ -1,37 +1,66 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
-// GetClientID - returns the full x509-style ID string of the invoking client
-func GetClientID(ctx contractapi.TransactionContextInterface) (string, error) {
-	id, err := ctx.GetClientIdentity().GetID()
-	if err != nil {
-		return "", fmt.Errorf("failed to get client id: %v", err)
+// EmitEvent sends a chaincode event to Hyperledger Fabric
+func EmitEvent(ctx contractapi.TransactionContextInterface, eventName string, payload []byte) error {
+	if err := ctx.GetStub().SetEvent(eventName, payload); err != nil {
+		return fmt.Errorf("failed to emit event %s: %v", eventName, err)
 	}
-	return id, nil
+	return nil
 }
 
-// GetClientMSP - returns the MSP ID of the invoking client
-func GetClientMSP(ctx contractapi.TransactionContextInterface) (string, error) {
-	msp, err := ctx.GetClientIdentity().GetMSPID()
-	if err != nil {
-		return "", fmt.Errorf("failed to get client msp id: %v", err)
-	}
-	return msp, nil
-}
+// AddToBatchIndex stores an ordered list of ledger keys for a given batchID
+func AddToBatchIndex(ctx contractapi.TransactionContextInterface, batchID string, key string) error {
+	indexKey := "index:batch:" + batchID
 
-// AssertOrg - helper to enforce expected MSP
-func AssertOrg(ctx contractapi.TransactionContextInterface, expectedMSP string) error {
-	msp, err := GetClientMSP(ctx)
+	idxBytes, err := ctx.GetStub().GetState(indexKey)
 	if err != nil {
 		return err
 	}
-	if msp != expectedMSP {
-		return fmt.Errorf("access denied: required msp %s, caller msp %s", expectedMSP, msp)
+
+	var keys []string
+	if idxBytes != nil {
+		if err := json.Unmarshal(idxBytes, &keys); err != nil {
+			return err
+		}
 	}
-	return nil
+
+	// Append new key and save
+	keys = append(keys, key)
+	out, err := json.Marshal(keys)
+	if err != nil {
+		return err
+	}
+
+	return ctx.GetStub().PutState(indexKey, out)
+}
+
+// GetFromBatchIndex fetches all ledger entries for a batchID
+func GetFromBatchIndex(ctx contractapi.TransactionContextInterface, batchID string) ([][]byte, error) {
+	indexKey := "index:batch:" + batchID
+	idxBytes, err := ctx.GetStub().GetState(indexKey)
+	if err != nil || idxBytes == nil {
+		return nil, err
+	}
+
+	var keys []string
+	if err := json.Unmarshal(idxBytes, &keys); err != nil {
+		return nil, err
+	}
+
+	var results [][]byte
+	for _, k := range keys {
+		bz, err := ctx.GetStub().GetState(k)
+		if err != nil || bz == nil {
+			continue
+		}
+		results = append(results, bz)
+	}
+	return results, nil
 }

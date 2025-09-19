@@ -1,12 +1,13 @@
 package models
 
-// ProcessingStep - created by Processor
 type ProcessingStep struct {
-	ID        string `json:"id"`
-	BatchID   string `json:"batch_id"`
-	Facility  string `json:"facility"` // clientID
-	Org       string `json:"org"`
-	Action    string `json:"action"` // drying, grinding, storage
-	Notes     string `json:"notes"`
-	Timestamp string `json:"timestamp"`
+	ResourceType string                 `json:"resourceType,omitempty"`
+	ID           string                 `json:"id"`
+	BatchID      string                 `json:"batchId"`
+	FacilityID   string                 `json:"facilityId,omitempty"` // Who performed the step
+	Org          string                 `json:"org,omitempty"`        // MSP org
+	Action       string                 `json:"action"`               // wash, dry, grind, etc
+	Params       map[string]interface{} `json:"params,omitempty"`     // optional processing parameters
+	Timestamp    string                 `json:"timestamp"`            // step timestamp
+	Notes        string                 `json:"notes,omitempty"`      // optional notes
 }

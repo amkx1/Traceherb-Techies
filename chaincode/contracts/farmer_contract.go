@@ -3,6 +3,8 @@ package contracts
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/amkx1/Traceherb-Techies/chaincode/models"
 	"github.com/amkx1/Traceherb-Techies/chaincode/utils"
@@ -16,7 +18,7 @@ type FarmerContract struct {
 
 // CreateCollectionEvent - farmer creates a collection event; id acts as batch id downstream
 func (fc *FarmerContract) CreateCollectionEvent(ctx contractapi.TransactionContextInterface,
-	id, species, location, timestamp, quality string) error {
+	id, species, location, timestamp, quality, quantityKg, notes string) error {
 
 	// identity & org check
 	clientID, err := utils.GetClientID(ctx)
@@ -52,14 +54,32 @@ func (fc *FarmerContract) CreateCollectionEvent(ctx contractapi.TransactionConte
 		return fmt.Errorf("collection event with id %s already exists", id)
 	}
 
+	// Parse location: expected format "lat,lon"
+	locMap := make(map[string]float64)
+	parts := strings.Split(location, ",")
+	if len(parts) == 2 {
+		lat, _ := strconv.ParseFloat(strings.TrimSpace(parts[0]), 64)
+		lon, _ := strconv.ParseFloat(strings.TrimSpace(parts[1]), 64)
+		locMap["lat"] = lat
+		locMap["lon"] = lon
+	}
+
+	// Parse quantity
+	qty, _ := strconv.ParseFloat(quantityKg, 64)
+
+	// Build event aligned to model
 	event := models.CollectionEvent{
-		ID:        id,
-		Species:   species,
-		Location:  location,
-		Collector: clientID,
-		Org:       msp,
-		Timestamp: timestamp,
-		Quality:   quality,
+		ResourceType: "CollectionEvent",
+		ID:           id,
+		CollectorID:  clientID,
+		ActorType:    "farmer",
+		Species:      species,
+		QuantityKg:   qty,
+		Location:     locMap,
+		Timestamp:    timestamp,
+		InitialQual:  map[string]interface{}{"grade": quality},
+		Notes:        notes,
+		BatchID:      "", // linked later
 	}
 
 	bz, err := json.Marshal(event)
@@ -75,16 +95,15 @@ func (fc *FarmerContract) CreateCollectionEvent(ctx contractapi.TransactionConte
 		return fmt.Errorf("failed to index collection event: %v", err)
 	}
 
-	// emit event
+	// emit event (non-fatal)
 	if err := utils.EmitEvent(ctx, "CollectionEventCreated", bz); err != nil {
-		// non-fatal: log event but do not rollback
-		return fmt.Errorf("created collection but failed to emit event: %v", err)
+		fmt.Println("warning: event emit failed:", err)
 	}
 
 	return nil
 }
 
-// ReadCollectionEvent
+// ReadCollectionEvent retrieves a farmer collection event
 func (fc *FarmerContract) ReadCollectionEvent(ctx contractapi.TransactionContextInterface, id string) (*models.CollectionEvent, error) {
 	key := "CollectionEvent:" + id
 	bz, err := ctx.GetStub().GetState(key)

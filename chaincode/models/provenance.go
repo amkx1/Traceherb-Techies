@@ -1,9 +1,10 @@
 package models
 
 type ProvenanceBundle struct {
-	BatchID     string            `json:"batch_id"`
-	Collection  *CollectionEvent  `json:"collection,omitempty"`
-	QualityTest *QualityTestEvent `json:"quality_test,omitempty"`
-	Processing  []*ProcessingStep `json:"processing,omitempty"`
-	FinalBatch  *FinalBatch       `json:"final_batch,omitempty"`
+	ResourceType     string             `json:"resourceType,omitempty"`
+	BatchID          string             `json:"batchId"`
+	CollectionEvents []CollectionEvent  `json:"collectionEvents,omitempty"`
+	ProcessingSteps  []ProcessingStep   `json:"processingSteps,omitempty"`
+	QualityTests     []QualityTestEvent `json:"qualityTests,omitempty"`
+	FinalBatch       *FinalBatch        `json:"finalBatch,omitempty"`
 }
