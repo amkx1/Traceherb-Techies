@@ -9,6 +9,8 @@ const { processIVRInput } = require('../utils/session');
 router.post('/', async (req, res) => {
   const phone = req.body.From;
   const digits = req.body.Digits;
+  
+  console.log(`IVR call from ${phone} with input: ${digits}`);
 
   try {
     // Process input through session manager
@@ -17,19 +19,22 @@ router.post('/', async (req, res) => {
     // Respond to Twilio with XML (TwiML)
     res.type('text/xml');
     res.send(`
+      <?xml version="1.0" encoding="UTF-8"?>
       <Response>
-        <Say voice="alice">${message}</Say>
-        <Pause length="1"/>
-        <Gather input="dtmf" timeout="10" numDigits="5" action="/ivr" method="POST"/>
+        <Say>${message}</Say>
+        <Gather timeout="10" numDigits="10">
+          <Say>Please enter your response.</Say>
+        </Gather>
       </Response>
     `);
+
   } catch (err) {
     console.error('IVR error:', err.message);
     res.type('text/xml');
     res.send(`
+      <?xml version="1.0" encoding="UTF-8"?>
       <Response>
-        <Say voice="alice">An error occurred. Please try again later.</Say>
-        <Hangup/>
+        <Say>An error occurred. Please try again later.</Say>
       </Response>
     `);
   }

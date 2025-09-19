@@ -1,29 +1,36 @@
-const { getContract } = require('./gateway');
+const { getContract } = require('./index');
 
-async function submitTransaction(fnName, args = []) {
+/**
+ * Submit a transaction to the blockchain (write)
+ * @param {string} fn - chaincode function name
+ * @param {Array} args - arguments to function
+ */
+async function submitTransaction(fn, args) {
   const { gateway, contract } = await getContract();
   try {
-    console.log(`Submitting tx ${fnName} ${JSON.stringify(args)}`);
-    const result = await contract.submitTransaction(fnName, ...args);
-    await gateway.disconnect();
+    const result = await contract.submitTransaction(fn, ...args);
     return result.toString();
-  } catch (err) {
-    await gateway.disconnect();
-    throw err;
+  } finally {
+    gateway.disconnect();
   }
 }
 
-async function evaluateTransaction(fnName, args = []) {
+/**
+ * Evaluate a transaction (read-only)
+ * @param {string} fn - chaincode function name
+ * @param {Array} args - arguments to function
+ */
+async function evaluateTransaction(fn, args) {
   const { gateway, contract } = await getContract();
   try {
-    console.log(`Evaluating tx ${fnName} ${JSON.stringify(args)}`);
-    const result = await contract.evaluateTransaction(fnName, ...args);
-    await gateway.disconnect();
+    const result = await contract.evaluateTransaction(fn, ...args);
     return result.toString();
-  } catch (err) {
-    await gateway.disconnect();
-    throw err;
+  } finally {
+    gateway.disconnect();
   }
 }
 
-module.exports = { submitTransaction, evaluateTransaction };
+module.exports = {
+  submitTransaction,
+  evaluateTransaction
+};

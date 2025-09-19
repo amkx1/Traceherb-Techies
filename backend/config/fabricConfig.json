@@ -1,7 +1,7 @@
 {
-  "connectionProfilePath": "./connection-profile.json",
+  "connectionProfilePath": "./connection.json",
   "walletPath": "./wallet",
   "identity": "appUser",
   "channelName": "mychannel",
-  "chaincodeName": "tracehercc"
+  "chaincodeName": "traceher"
 }

@@ -1,25 +1,58 @@
 const twilio = require('twilio');
 const config = require('../config/twilioConfig.json');
 
-// Twilio client
+// Initialize Twilio client
 const client = twilio(config.accountSid, config.authToken);
 
 /**
- * Send an SMS message to a farmer
- * @param {string} to - Recipient phone number (e.g. +919876543210)
- * @param {string} message - Message text
+ * Send SMS via Twilio
+ * @param {string} to - Phone number to send to
+ * @param {string} body - SMS message body
+ * @returns {Promise} Twilio response
  */
-async function sendSMS(to, message) {
+async function sendSMS(to, body) {
   try {
-    await client.messages.create({
-      body: message,
+    console.log(`Sending SMS to ${to}: ${body}`);
+    
+    const message = await client.messages.create({
+      body,
       from: config.fromNumber,
       to
     });
-    console.log(`SMS sent to ${to}: ${message}`);
-  } catch (err) {
-    console.error('SMS error:', err.message);
+    
+    console.log(`SMS sent successfully: ${message.sid}`);
+    return message;
+  } catch (error) {
+    console.error('SMS send failed:', error.message);
+    throw error;
   }
 }
 
-module.exports = { sendSMS };
+/**
+ * Send WhatsApp message via Twilio
+ * @param {string} to - WhatsApp number (format: whatsapp:+1XXXXXXXXXX)
+ * @param {string} body - Message body
+ * @returns {Promise} Twilio response
+ */
+async function sendWhatsApp(to, body) {
+  try {
+    console.log(`Sending WhatsApp to ${to}: ${body}`);
+    
+    const message = await client.messages.create({
+      body,
+      from: `whatsapp:${config.fromNumber}`,
+      to: `whatsapp:${to}`
+    });
+    
+    console.log(`WhatsApp sent successfully: ${message.sid}`);
+    return message;
+  } catch (error) {
+    console.error('WhatsApp send failed:', error.message);
+    throw error;
+  }
+}
+
+module.exports = {
+  sendSMS,
+  sendWhatsApp
+};
