@@ -15,6 +15,7 @@ func main() {
 		new(contracts.ProcessorContract),
 		new(contracts.ManufacturerContract),
 		new(contracts.ProvenanceContract),
+		new(contracts.RecallContract),
 	)
 	if err != nil {
 		log.Panicf("Error creating Traceher chaincode: %v", err)
