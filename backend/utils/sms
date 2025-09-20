@@ -1,58 +1,36 @@
-const twilio = require('twilio');
-const config = require('../config/twilioConfig.json');
+// sms.js
+// Twilio SMS helper
 
-// Initialize Twilio client
-const client = twilio(config.accountSid, config.authToken);
+const twilio = require('twilio');
+
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken  = process.env.TWILIO_AUTH_TOKEN;
+const fromNumber = process.env.TWILIO_PHONE_NUMBER;
+
+if (!accountSid || !authToken || !fromNumber) {
+  console.error("❌ Missing Twilio environment variables");
+}
+
+const client = twilio(accountSid, authToken);
 
 /**
- * Send SMS via Twilio
- * @param {string} to - Phone number to send to
- * @param {string} body - SMS message body
- * @returns {Promise} Twilio response
+ * Send SMS to a farmer
+ * @param {string} to - Farmer phone number
+ * @param {string} message - Message text
  */
-async function sendSMS(to, body) {
+async function sendSMS(to, message) {
   try {
-    console.log(`Sending SMS to ${to}: ${body}`);
-    
-    const message = await client.messages.create({
-      body,
-      from: config.fromNumber,
+    const result = await client.messages.create({
+      body: message,
+      from: fromNumber,
       to
     });
-    
-    console.log(`SMS sent successfully: ${message.sid}`);
-    return message;
-  } catch (error) {
-    console.error('SMS send failed:', error.message);
-    throw error;
+    console.log(`📤 SMS sent to ${to}: ${message}`);
+    return result;
+  } catch (err) {
+    console.error(`❌ Error sending SMS to ${to}:`, err.message);
+    throw err;
   }
 }
 
-/**
- * Send WhatsApp message via Twilio
- * @param {string} to - WhatsApp number (format: whatsapp:+1XXXXXXXXXX)
- * @param {string} body - Message body
- * @returns {Promise} Twilio response
- */
-async function sendWhatsApp(to, body) {
-  try {
-    console.log(`Sending WhatsApp to ${to}: ${body}`);
-    
-    const message = await client.messages.create({
-      body,
-      from: `whatsapp:${config.fromNumber}`,
-      to: `whatsapp:${to}`
-    });
-    
-    console.log(`WhatsApp sent successfully: ${message.sid}`);
-    return message;
-  } catch (error) {
-    console.error('WhatsApp send failed:', error.message);
-    throw error;
-  }
-}
-
-module.exports = {
-  sendSMS,
-  sendWhatsApp
-};
+module.exports = { sendSMS };
