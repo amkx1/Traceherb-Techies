@@ -1,7 +1,0 @@
-body { font-family: Arial, sans-serif; background: #f0f0f0; }
-.container { max-width: 500px; margin: 50px auto; padding: 20px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 10px; }
-input, button { display: block; width: 100%; margin: 10px 0; padding: 10px; }
-button { background: #1b5e20; color: white; border: none; cursor: pointer; }
-button:hover { background: #2e7d32; }
-ul { list-style: none; padding: 0; }
-li { background: #e0e0e0; margin: 5px 0; padding: 5px; border-radius: 5px; }
