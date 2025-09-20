@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const morgan = require('morgan');
+const path = require('path');
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
@@ -16,14 +17,22 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
-// Register routes
+app.use(express.static(path.join(__dirname, '..')));
+
+
+// Register backend routes
 app.use('/auth', authRoutes);
 app.use('/api', apiRoutes);
-app.use('/ivr', ivrRoutes); // 🆕 mount IVR route
+app.use('/ivr', ivrRoutes);
 
-// Root endpoint
+// Root endpoint (optional: shows simple backend status for '/')
 app.get('/', (req, res) => {
   res.json({ message: 'TraceHer Backend is running ' });
+});
+
+// Serve index.html for unknown routes (SPA fallback, optional)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Start server
