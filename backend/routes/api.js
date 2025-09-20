@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { submitTransaction, evaluateTransaction } = require('../fabric/index');
+const recallRoutes = require('./recallRoutes');
+const fileRoutes = require('./fileRoutes');
+const aiRoutes = require('./aiRoutes'); // <-- Import the new AI routes
 
 
 /**
@@ -44,5 +47,10 @@ router.get('/status/:productId', async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+// Register the routes
+router.use('/recall', recallRoutes);
+router.use('/files', fileRoutes);
+router.use('/ai', aiRoutes); // <-- Add this line
 
 module.exports = router;

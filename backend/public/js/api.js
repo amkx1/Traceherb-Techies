@@ -96,3 +96,17 @@ export async function uploadLabTest(file) {
 export async function getProvenance(batchId) {
   return handleRequest(`${BASE_URL}/provenance/${batchId}`);
 }
+
+// ---------------- AI Query ----------------
+export async function queryAI(question, batchId) {
+    const response = await fetch(`${BASE_URL}/ai/query`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, batchId }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.error || 'Failed to query AI');
+    }
+    return data;
+}
