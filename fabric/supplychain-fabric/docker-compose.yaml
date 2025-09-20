@@ -268,6 +268,10 @@ services:
       - SYS_CHANNEL=supplychain-sys-channel
       - GOPATH=/opt/gopath
       - FABRIC_CFG_PATH=/etc/hyperledger/fabric
+      - CORE_PEER_ID=cli
+      - CORE_PEER_ADDRESS=peer0.farmers.example.com:7051
+      - CORE_PEER_LOCALMSPID=FarmersMSP
+      - CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/farmers.example.com/users/Admin@farmers.example.com/msp
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_TLS_CERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/farmers.example.com/peers/peer0.farmers.example.com/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/farmers.example.com/peers/peer0.farmers.example.com/tls/server.key
@@ -275,16 +279,7 @@ services:
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
     command: /bin/bash
     volumes:
-      - ./crypto-config:/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/
+      - ./config/crypto-config:/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/
       - ./channel-artifacts:/opt/gopath/src/github.com/hyperledger/fabric/peer/channel-artifacts
       - ./config:/etc/hyperledger/fabric
-    depends_on:
-      - orderer.example.com
-      - peer0.farmers.example.com
-      - peer0.collectors.example.com
-      - peer0.labs.example.com
-      - peer0.processors.example.com
-      - peer0.manufacturers.example.com
-      - peer0.provenance.example.com
-    networks:
-      - supplychain
+
