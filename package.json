@@ -21,7 +21,9 @@
   },
   "homepage": "https://github.com/amkx1/Traceherb-Techies#readme",
   "dependencies": {
-    "express": "^5.1.0"
-  },
-  "devDependencies": {}
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "fs": "^0.0.1-security",
+    "node-telegram-bot-api": "^0.66.0"
+  }
 }
