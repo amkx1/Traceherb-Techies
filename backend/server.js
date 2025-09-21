@@ -5,10 +5,8 @@ const cors = require('cors');
 const morgan = require('morgan');
 const path = require('path');
 const net = require('net');
-const fs = require('fs-extra');
-
-const { getContract } = require('./fabric'); // make sure fabric/index.js exports getContract
-const { sendSMS } = require('./utils/sms'); // path to your sms.js
+const fs = require('fs');
+const TelegramBot = require('node-telegram-bot-api');
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
@@ -31,74 +29,89 @@ app.use('/auth', authRoutes);
 app.use('/api', apiRoutes);
 // app.use('/ivr', ivrRoutes); // optional
 
-// ✅ SMS webhook (farmers can send SMS without app)
-app.post('/sms', async (req, res) => {
-  const incomingMsg = req.body.Body?.trim() || '';
-  const fromNumber = req.body.From || 'unknown';
-
-  console.log(`📩 SMS received from ${fromNumber}: ${incomingMsg}`);
-
-  const parts = incomingMsg.split(' ');
-  if (parts.length < 2) {
-    res.type('text/xml');
-    return res.send(`<Response><Message>❌ Format: SPECIES WEIGHT</Message></Response>`);
-  }
-
-  const species = parts[0].toUpperCase();
-  const weight = parseFloat(parts[1]);
-
-  if (isNaN(weight)) {
-    res.type('text/xml');
-    return res.send(`<Response><Message>❌ Invalid weight. Example: TURMERIC 50</Message></Response>`);
-  }
-
-  try {
-    // 👉 Submit to Fabric
-    const { gateway, contract } = await getContract();
-    await contract.submitTransaction('registerProduct', fromNumber, species, weight.toString(), 'N/A');
-    await gateway.disconnect();
-
-    // 👉 Log entry
-    const logEntry = {
-      phone: fromNumber,
-      crop: species,
-      quantity: weight,
-      timestamp: new Date().toISOString()
-    };
-
-    const logFile = path.join(__dirname, 'logs', 'smsLogs.json');
-    let logs = [];
-    if (fs.existsSync(logFile)) {
-      logs = JSON.parse(await fs.readFile(logFile, 'utf8'));
-    }
-    logs.push(logEntry);
-    await fs.writeFile(logFile, JSON.stringify(logs, null, 2));
-    console.log('📝 SMS log saved:', logEntry);
-
-    // 👉 Send confirmation SMS
-    await sendSMS(fromNumber, `✅ Harvest submitted: ${species} ${weight}kg. Thank you!`);
-
-    // Twilio requires XML reply
-    res.type('text/xml');
-    res.send(`<Response><Message>✅ Submitted: ${species} ${weight}kg</Message></Response>`);
-  } catch (err) {
-    console.error('❌ Error handling SMS:', err.message);
-    res.type('text/xml');
-    res.send(`<Response><Message>❌ Error submitting harvest. Please try again.</Message></Response>`);
-  }
-});
-
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({ message: 'TraceHer Backend is running' });
 });
 
-// ⚠️ SPA fallback (must come LAST)
+// SPA fallback
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Auto-find free port starting from 3000
+// ===== Telegram Bot Integration =====
+const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
+
+// In-memory storage
+const verifiedPhones = {};
+const otpStore = {};
+const farmerData = [];
+const voiceData = [];
+
+// ===== Handle incoming voice messages =====
+bot.on('voice', async (msg) => {
+  const chatId = msg.chat.id;
+  const fileId = msg.voice.file_id;
+
+  const file = await bot.getFileLink(fileId);
+  const filePath = `voice_${Date.now()}.oga`;
+
+  const axios = require('axios');
+  const writer = fs.createWriteStream(filePath);
+  const response = await axios({ url: file, method: 'GET', responseType: 'stream' });
+  response.data.pipe(writer);
+
+  writer.on('finish', () => {
+    voiceData.push({ farmer: chatId, recording: filePath, timestamp: new Date().toISOString() });
+    console.log('📢 Voice Message Received:', {
+      farmer: chatId,
+      recording: filePath,
+      timestamp: new Date().toISOString()
+    });
+    bot.sendMessage(chatId, "✅ Voice input received and stored.");
+  });
+});
+
+// ===== Handle text messages (OTP / crop info) =====
+bot.on('message', (msg) => {
+  const chatId = msg.chat.id;
+  const text = msg.text;
+
+  if (!text) return;
+
+  // OTP verification
+  if (!verifiedPhones[chatId]) {
+    if (otpStore[chatId] && text === otpStore[chatId]) {
+      verifiedPhones[chatId] = true;
+      delete otpStore[chatId];
+      bot.sendMessage(chatId, "✅ OTP verified! You can now send crop info or voice messages.");
+    } else {
+      const otp = otpStore[chatId] || Math.floor(100000 + Math.random() * 900000).toString();
+      otpStore[chatId] = otp;
+      bot.sendMessage(chatId, `🔑 Your OTP is: ${otp}\nPlease enter this OTP to verify.`);
+    }
+    return;
+  }
+
+  // Crop info format: CROP Wheat QTY 50kg LOC Bihar
+  const crop = (text.match(/CROP\s+(.*?)\s+/i) || [])[1] || '';
+  const qty = (text.match(/QTY\s+(.*?)\s+/i) || [])[1] || '';
+  const loc = (text.match(/LOC\s+(.*?)$/i) || [])[1] || '';
+
+  if (crop && qty && loc) {
+    const entry = { farmer: chatId, crop, quantity: qty, location: loc, timestamp: new Date().toISOString() };
+    farmerData.push(entry);
+    console.log('🌾 Crop Info Received:', entry);
+    bot.sendMessage(chatId, `✅ Received crop info: ${crop} (${qty}) in ${loc}`);
+  }
+});
+
+// ===== Endpoint to view all received data =====
+app.get('/farmer-data', (req, res) => {
+  res.json({ sms: farmerData, voice: voiceData });
+});
+
+// ===== Auto-find free port starting from 3000 =====
 function findFreePort(start = 3000) {
   return new Promise((resolve) => {
     const server = net.createServer();
