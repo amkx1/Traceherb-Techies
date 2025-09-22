@@ -1,8 +1,0 @@
-{
-  "name": "AyurvedaMobileApp",
-  "displayName": "Ayurveda Mobile App",
-  "expo": {
-    "sdkVersion": "48.0.0",
-    "platforms": ["ios", "android"]
-  }
-}

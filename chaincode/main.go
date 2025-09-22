@@ -3,7 +3,8 @@ package main
 import (
 	"log"
 
-	"github.com/amkx1/Traceherb-Techies/chaincode/contracts"
+	"traceherb/chaincode/contracts"
+
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 

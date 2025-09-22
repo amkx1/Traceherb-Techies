@@ -6,8 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/amkx1/Traceherb-Techies/chaincode/models"
-	"github.com/amkx1/Traceherb-Techies/chaincode/utils"
+	"traceherb/chaincode/models"
+	"traceherb/chaincode/utils"
+
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 

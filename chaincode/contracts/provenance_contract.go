@@ -4,7 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/amkx1/Traceherb-Techies/chaincode/models"
+	"traceherb/chaincode/models"
+
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
