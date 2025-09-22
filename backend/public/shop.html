@@ -44,8 +44,23 @@
   </div>
 
   <script>
-    function toggleDarkMode(){ document.body.classList.toggle("dark"); }
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark");
+    }
+
+    // ✅ Redirect to thankyou.html after form submission
+    document.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("productForm");
+
+      form.addEventListener("submit", function (e) {
+        e.preventDefault(); // Prevent actual form submission
+
+        // Optionally handle form data here (e.g., send to backend)
+
+        // Redirect to thankyou.html
+        window.location.href = "thankyou.html";
+      });
+    });
   </script>
 </body>
 </html>
-''
