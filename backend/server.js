@@ -11,6 +11,7 @@ const TelegramBot = require('node-telegram-bot-api');
 // Routes
 const authRoutes = require('./routes/authRoutes');
 const apiRoutes = require('./routes/api');
+const fireflyRoutes = require('./routes/fireflyRoutes');
 // const ivrRoutes = require('./routes/ivr'); // optional
 
 const app = express();
@@ -27,6 +28,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Register backend routes
 app.use('/auth', authRoutes);
 app.use('/api', apiRoutes);
+app.use('/firefly', fireflyRoutes);
 // app.use('/ivr', ivrRoutes); // optional
 
 // Root endpoint
