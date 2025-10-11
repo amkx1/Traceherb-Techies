@@ -1,138 +1,14 @@
-require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const morgan = require('morgan');
 const path = require('path');
 const net = require('net');
-const fs = require('fs');
-const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios');
 
-// ===== Import routes =====
-const authRoutes = require('./routes/authRoutes');
-const apiRoutes = require('./routes/api');
-const fireflyRoutes = require('./routes/fireflyRoutes');
-
-const app = express();
-
-// ===== Middleware =====
-app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(morgan('dev'));
-
-// ===== Serve frontend =====
-app.use(express.static(path.join(__dirname, 'public')));
-
-// ===== Backend routes =====
-app.use('/auth', authRoutes);
-app.use('/api', apiRoutes);
-app.use('/firefly', fireflyRoutes);
-
-// ===== Root endpoint =====
-app.get('/', (req, res) => {
-  res.json({ message: 'TraceHer Backend is running 🚀' });
-});
-
-// ===== SPA fallback =====
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// ===== Telegram Bot Integration =====
-const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
-
-// In-memory storage
-const verifiedPhones = {};
-const otpStore = {};
-const farmerData = [];
-const voiceData = [];
-
-// ===== Handle voice messages =====
-bot.on('voice', async (msg) => {
-  const chatId = msg.chat.id;
-  const fileId = msg.voice.file_id;
-
-  try {
-    const file = await bot.getFileLink(fileId);
-    const filePath = `voice_${Date.now()}.oga`;
-
-    const writer = fs.createWriteStream(filePath);
-    const response = await axios({ url: file, method: 'GET', responseType: 'stream' });
-    response.data.pipe(writer);
-
-    writer.on('finish', () => {
-      voiceData.push({ farmer: chatId, recording: filePath, timestamp: new Date().toISOString() });
-      console.log('📢 Voice Message Received:', {
-        farmer: chatId,
-        recording: filePath,
-        timestamp: new Date().toISOString()
-      });
-      bot.sendMessage(chatId, "✅ Voice input received and stored.");
-    });
-  } catch (err) {
-    console.error("❌ Failed to process voice message:", err.message);
-  }
-});
-
-// ===== Handle text messages (OTP / crop info) =====
-bot.on('message', (msg) => {
-  const chatId = msg.chat.id;
-  const text = msg.text;
-
-  if (!text) return; // ignore non-text
-
-  // OTP verification
-  if (!verifiedPhones[chatId]) {
-    if (otpStore[chatId] && text === otpStore[chatId]) {
-      verifiedPhones[chatId] = true;
-      delete otpStore[chatId];
-      bot.sendMessage(chatId, "✅ OTP verified! You can now send crop info or voice messages.");
-    } else if (!otpStore[chatId]) {
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      otpStore[chatId] = otp;
-      bot.sendMessage(chatId, `🔑 Your OTP is: ${otp}\nPlease enter this OTP to verify.`);
-    } else {
-      bot.sendMessage(chatId, "❌ Invalid OTP. Please try again.");
-    }
-    return;
-  }
-
-  // Crop info format: CROP Wheat QTY 50kg LOC Bihar
-  const crop = (text.match(/CROP\s+(.*?)\s+/i) || [])[1] || '';
-  const qty = (text.match(/QTY\s+(.*?)\s+/i) || [])[1] || '';
-  const loc = (text.match(/LOC\s+(.*?)$/i) || [])[1] || '';
-
-  if (crop && qty && loc) {
-    const entry = { farmer: chatId, crop, quantity: qty, location: loc, timestamp: new Date().toISOString() };
-    farmerData.push(entry);
-    console.log('🌾 Crop Info Received:', entry);
-
-    // 🔗 Send to Python blockchain
-    axios.post("http://127.0.0.1:5000/add_transaction", entry)
-      .then(res => {
-        console.log("✅ Added to blockchain:", res.data);
-      })
-      .catch(err => {
-        console.error("❌ Blockchain offline:", err.message);
-      });
-
-    bot.sendMessage(chatId, `✅ Received crop info: ${crop} (${qty}) in ${loc}`);
-  } else {
-    bot.sendMessage(chatId, "❗ Please use format: CROP <name> QTY <amount> LOC <place>");
-  }
-});
-
-// ===== Endpoint to view all received farmer data =====
-app.get('/farmer-data', (req, res) => {
-  res.json({ sms: farmerData, voice: voiceData });
-});
-
-// ===== Telegram Polling Error Handler (detailed) =====
-bot.on("polling_error", (err) => {
-  console.error("❌ Telegram Polling Error:", err.code, err.message, err.response?.body);
-});
+// ===== Local blockchain and webhook URLs =====
+const BLOCKCHAIN_URL = 'http://127.0.0.1:5000/add_transaction';
+const N8N_WEBHOOK_URL = 'https://n8n-latest-ms7n.onrender.com/webhook/Amrendra-Backend-testing'; // Example webhook
 
 // ===== Auto-find free port =====
 function findFreePort(start = 3000) {
@@ -146,11 +22,92 @@ function findFreePort(start = 3000) {
   });
 }
 
-// ===== Start Server =====
-(async () => {
+// ===== Send dummy data to n8n webhook on first run =====
+async function sendInitialWebhook() {
+  const dummyData = {
+    farmer: 'TestFarmer',
+    crop: 'Wheat',
+    quantity: '1000kg',
+    location: 'Andhra Pradesh',
+    timestamp: new Date().toISOString(),
+    note: '🌾 Initial test data from TraceHer backend'
+  };
+
+  try {
+    const res = await axios.post(N8N_WEBHOOK_URL, dummyData);
+    console.log('📨 Sent initial dummy data to n8n webhook:', res.status);
+  } catch (err) {
+    console.warn('⚠️ Could not send dummy data to webhook:', err.message);
+  }
+}
+
+// ===== Main startup function =====
+async function startServer() {
+  const app = express();
+  app.use(cors());
+  app.use(bodyParser.json());
+  app.use(bodyParser.urlencoded({ extended: true }));
+  app.use(morgan('dev'));
+  app.use(express.static(path.join(__dirname, 'public')));
+
+  // ===== Routes =====
+  const authRoutes = require('./routes/authRoutes');
+  const apiRoutes = require('./routes/api');
+  const fireflyRoutes = require('./routes/fireflyRoutes');
+  const n8nRoutes = require('./routes/n8nRoutes');
+
+  app.use('/auth', authRoutes);
+  app.use('/api', apiRoutes);
+  app.use('/firefly', fireflyRoutes);
+  app.use('/n8n', n8nRoutes);
+
+  app.get('/', (req, res) => res.json({ message: 'TraceHer Backend is running 🚀' }));
+  app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+
+  // ===== In-memory storage =====
+  const farmerData = [];
+  const voiceData = [];
+
+  // ===== Crop submission endpoint =====
+  app.post('/submit-crop', async (req, res) => {
+    const { farmer, crop, quantity, location } = req.body;
+
+    if (!farmer || !crop || !quantity || !location) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const entry = { farmer, crop, quantity, location, timestamp: new Date().toISOString() };
+    farmerData.push(entry);
+
+    try {
+      // Add to blockchain
+      await axios.post(BLOCKCHAIN_URL, entry);
+      console.log('✅ Added to blockchain:', entry);
+
+      // Send to n8n webhook
+      await axios.post(N8N_WEBHOOK_URL, entry);
+      console.log('📨 Sent data to n8n webhook');
+
+      res.json({ success: true, message: 'Data sent to blockchain and webhook successfully!' });
+    } catch (err) {
+      console.error('❌ Error while forwarding data:', err.message);
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // ===== Farmer data endpoint =====
+  app.get('/farmer-data', (req, res) => res.json({ sms: farmerData, voice: voiceData }));
+
+  // ===== Start server =====
   const port = await findFreePort(3000);
-  app.listen(port, () => {
+  app.listen(port, async () => {
     console.log(`✅ Backend server running on port ${port}`);
     console.log(`🌐 Open your dashboard at http://localhost:${port}/`);
+
+    // 🔹 Send dummy data on first run
+    await sendInitialWebhook();
   });
-})();
+}
+
+// ===== Launch =====
+startServer();
