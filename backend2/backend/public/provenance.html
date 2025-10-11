@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAHAYAAK | Provenance</title>
+<link rel="stylesheet" href="css/style.css">
+<script type="module" src="js/provenance.js" defer></script>
+</head>
+<body>
+  <div class="sidebar">
+    <h2>SAHAYAAK</h2>
+    <ul>
+      <li><a href="index.html">📊 Dashboard</a></li>
+      <li><a href="shop.html">🛒 Shop</a></li>
+      <li><a href="batch.html">📦 Batches</a></li>
+      <li><a href="harvest.html">🌾 Harvests</a></li>
+      <li><a href="recall.html">🔔 Recalls</a></li>
+      <li><a href="lab.html">🧪 Lab Reports</a></li>
+      <li><a href="provenance.html">📈 Provenance</a></li>
+      <li><a href="#logout">🚪 Logout</a></li>
+    </ul>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <h2>Provenance</h2>
+      <button onclick="toggleDarkMode()">🌙 Toggle Dark</button>
+    </div>
+
+    <section>
+      <form id="provenanceForm">
+        <h3>Check Provenance</h3>
+        <input type="text" id="batchId" placeholder="Batch ID" required>
+        <button type="submit">Fetch</button>
+      </form>
+
+      <div id="provenanceDisplay" class="mt-4">
+        <pre id="provenanceList"></pre>
+      </div>
+    </section>
+
+    <!-- AI Query Section -->
+    <section id="ai-section" class="mt-4" style="display:none;">
+        <h2>Ask AI about this Batch</h2>
+        <div class="card">
+            <div class="card-body">
+                <div class="input-group mb-3">
+                    <input type="text" id="ai-question-input" class="form-control" placeholder="e.g., Who was the farmer? or What was the harvest weight?">
+                    <button class="btn btn-primary" id="ask-ai-btn">Ask</button>
+                </div>
+                <div id="ai-answer-container" class="mt-3" style="display:none;">
+                    <h5>Answer:</h5>
+                    <p id="ai-answer-text" class="text-muted"></p>
+                </div>
+            </div>
+        </div>
+    </section>
+  </div>
+
+  <script>
+    function toggleDarkMode(){ document.body.classList.toggle("dark"); }
+  </script>
+</body>
+</html>

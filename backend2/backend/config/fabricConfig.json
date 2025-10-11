@@ -1,0 +1,7 @@
+{
+// REMOVED:   "connectionProfilePath": "./connection.json",
+  "walletPath": "./wallet",
+  "identity": "appUser",
+  "channelName": "mychannel",
+  "chaincodeName": "traceher"
+}

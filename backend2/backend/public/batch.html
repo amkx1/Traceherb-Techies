@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAHAYAAK | Batches</title>
+<link rel="stylesheet" href="css/style.css">
+<script type="module" src="js/batch.js" defer></script>
+</head>
+<body>
+  <div class="sidebar">
+    <h2>SAHAYAAK</h2>
+    <ul>
+      <li><a href="index.html">📊 Dashboard</a></li>
+      <li><a href="shop.html">🛒 Shop</a></li>
+      <li><a href="batch.html">📦 Batches</a></li>
+      <li><a href="harvest.html">🌾 Harvests</a></li>
+      <li><a href="recall.html">🔔 Recalls</a></li>
+      <li><a href="lab.html">🧪 Lab Reports</a></li>
+      <li><a href="provenance.html">📈 Provenance</a></li>
+      <li><a href="#logout">🚪 Logout</a></li>
+    </ul>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <h2>Batches</h2>
+      <button onclick="toggleDarkMode()">🌙 Toggle Dark</button>
+    </div>
+
+    <section>
+      <form id="batchForm">
+        <h3>Create Batch</h3>
+        <input type="text" id="batchName" placeholder="Batch Name" required>
+        <input type="text" id="productId" placeholder="Product ID" required>
+        <button type="submit">Create Batch</button>
+      </form>
+
+      <table id="batchTable">
+        <thead>
+          <tr>
+            <th>Batch ID</th>
+            <th>Product</th>
+            <th>Quantity</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </div>
+
+  <script>
+    function toggleDarkMode(){ document.body.classList.toggle("dark"); }
+  </script>
+</body>
+</html>
