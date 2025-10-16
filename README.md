@@ -34,6 +34,8 @@ node server.js
 ### 3. Telegram Bot
 Open telegram and send **Hi** to our **Sahayak** bot. You'll recieve an OTP. Send that OTP again to the bot to verify yourself.
 
+**SMS feature will be added too.[Work in progress]**
+
 ### 4. Recieving crop info
 Now that you're verified, share your crop details to the bot in the following format- `CROP <crop> QTY <quantity> LOC <location>`
 
